@@ -1,15 +1,15 @@
 <?php
 	$inData = getRequestInfo();
-	
+
 	$color = $inData["color"];
 	$userId = $inData["userId"];
 
 	require_once __DIR__ . '/database.php';
 	$conn = connectDatabase();
-	if ($conn->connect_error) 
+	if ($conn->connect_error)
 	{
 		returnWithError( $conn->connect_error );
-	} 
+	}
 	else
 	{
 		$stmt = $conn->prepare("INSERT into Colors (UserId,Name) VALUES(?,?)");
@@ -30,11 +30,11 @@
 		header('Content-type: application/json');
 		echo $obj;
 	}
-	
+
 	function returnWithError( $err )
 	{
 		$retValue = '{"error":"' . $err . '"}';
 		sendResultInfoAsJson( $retValue );
 	}
-	
+
 ?>
