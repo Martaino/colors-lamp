@@ -1,0 +1,20 @@
+# Local secrets and server configuration
+.env
+.env.*
+config.local.php
+*.local.conf
+*.pem
+*.key
+
+# Operating-system metadata and editor files
+.DS_Store
+Thumbs.db
+*:Zone.Identifier
+.vscode/
+.idea/
+*.swp
+
+# Runtime output and database backups
+*.log
+*.sql.gz
+/backups/
