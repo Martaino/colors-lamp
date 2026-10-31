@@ -1,0 +1,46 @@
+@startuml
+title COLORS - Use Case Diagram
+left to right direction
+skinparam backgroundColor white
+skinparam shadowing false
+skinparam defaultFontName SansSerif
+skinparam packageStyle rectangle
+skinparam usecaseBackgroundColor #EAF2F8
+skinparam ArrowColor #34495E
+
+actor "Existing user" as User
+rectangle "COLORS web application" {
+  usecase "Log in" as Login
+  usecase "Add a color" as Add
+  usecase "Search saved colors" as Search
+  usecase "Log out" as Logout
+}
+User -- Login
+User -- Add
+User -- Search
+User -- Logout
+
+note right of Login
+  Enter username and password.
+  Matching credentials open color.html;
+  invalid credentials display an error.
+end note
+note right of Add
+  Precondition: user has logged in.
+  Save a color name with the user's ID.
+end note
+note right of Search
+  Precondition: user has logged in.
+  Search names by partial text for that user.
+  Empty text matches all of their colors.
+end note
+note right of Logout
+  Clear browser login data and cookie;
+  return to index.html.
+end note
+legend bottom
+  Scope: existing accounts only; no registration, editing, or deletion.
+  Login is a precondition for color use cases, not a repeated included use case.
+  The PHP API trusts the supplied userId; login state is held in the browser.
+endlegend
+@enduml

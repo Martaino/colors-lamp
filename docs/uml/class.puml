@@ -1,0 +1,95 @@
+@startuml
+title COLORS - Class Diagram\nLogical structure of the procedural LAMP application
+skinparam backgroundColor white
+skinparam shadowing false
+skinparam defaultFontName SansSerif
+skinparam classAttributeIconSize 0
+skinparam packageStyle rectangle
+skinparam classBackgroundColor #EAF2F8
+skinparam ArrowColor #34495E
+hide empty members
+
+package "Browser" {
+  class "ColorsClient\npublic/js/code.js" as Client <<module>> {
+    urlBase : String = "../api"
+    extension : String = "php"
+    userId : Integer = 0
+    firstName : String
+    lastName : String
+    --
+    doLogin() : void
+    saveCookie() : void
+    readCookie() : void
+    doLogout() : void
+    addColor() : void
+    searchColor() : void
+  }
+}
+
+package "PHP API" {
+  class "LoginEndpoint\napi/Login.php" as Login <<script>> {
+    getRequestInfo() : JSON object
+    returnWithInfo(firstName, lastName, id) : void
+    returnWithError(err) : void
+    sendResultInfoAsJson(obj) : void
+  }
+  class "AddColorEndpoint\napi/AddColor.php" as Add <<script>> {
+    getRequestInfo() : JSON object
+    returnWithError(err) : void
+    sendResultInfoAsJson(obj) : void
+  }
+  class "SearchColorsEndpoint\napi/SearchColors.php" as Search <<script>> {
+    getRequestInfo() : JSON object
+    returnWithInfo(searchResults) : void
+    returnWithError(err) : void
+    sendResultInfoAsJson(obj) : void
+  }
+  class "DatabaseAccess\napi/database.php" as Database <<module>> {
+    connectDatabase() : mysqli
+  }
+}
+
+package "MySQL domain entities" as Entities {
+  class User <<entity>> {
+    ID : Integer {PK, auto increment}
+    FirstName : String {maxLength = 50}
+    LastName : String {maxLength = 50}
+    Login : String {maxLength = 50}
+    Password : String {maxLength = 50}
+  }
+  class Color <<entity>> {
+    ID : Integer {PK, auto increment}
+    Name : String {maxLength = 50}
+    UserID : Integer
+  }
+  User "1" -- "0..*" Color : saves >
+}
+
+Client ..> Login : POST JSON\nlogin, password
+Client ..> Add : POST JSON\ncolor, userId
+Client ..> Search : POST JSON\nsearch, userId
+Login ..> Database : connectDatabase()
+Add ..> Database : connectDatabase()
+Search ..> Database : connectDatabase()
+Login ..> User : SELECT by Login, Password
+Add ..> Color : INSERT UserId, Name
+Search ..> Color : SELECT Name\nby name pattern and UserID
+
+note bottom of Database
+  Reads DB_HOST, DB_NAME, DB_USER, DB_PASSWORD.
+  Returns a utf8mb4 MySQLi connection.
+  Exits with JSON on configuration / connection failure.
+end note
+note bottom of Color
+  Logical ownership: Color.UserID refers to User.ID.
+  The SQL schema declares no foreign key constraint;
+  the API does not enforce that the user exists.
+end note
+legend bottom
+  <<entity>> = conceptual class corresponding to a database table (Users or Colors).
+  <<module>> / <<script>> = grouped functions, not literal JavaScript or PHP classes.
+  Solid line = domain association with multiplicities; dashed arrow = dependency.
+  Script operations are file-scoped functions. Types summarize values, not PHP type declarations.
+  Browser state and cookie supply userId; there is no server session class.
+endlegend
+@enduml

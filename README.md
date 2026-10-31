@@ -23,10 +23,16 @@ public/
   js/                 Browser logic and supplied MD5 helper
   images/             Lab background image
 database/schema.sql   Empty Users and Colors tables
+docs/uml/             UML source files, rendered diagrams, and modeling notes
 README.md             Setup and project notes
 LICENSE.md            MIT license
 .gitignore            Excludes secrets, local settings, and generated files
 ```
+
+## UML diagrams
+
+The assignment's [Use Case, Activity, and Class diagrams](docs/uml/README.md)
+include editable PlantUML sources and rendered PNG/SVG images in `docs/uml`.
 
 ## Setup
 

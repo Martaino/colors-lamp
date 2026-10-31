@@ -1,0 +1,89 @@
+@startuml
+title COLORS - Activity Diagram\nLogin, manage colors, and logout
+skinparam backgroundColor white
+skinparam shadowing false
+skinparam defaultFontName SansSerif
+skinparam activityBackgroundColor #EAF2F8
+skinparam ArrowColor #34495E
+
+|User|
+start
+:Open index.html;
+repeat
+  :Enter username and password;\nclick login;
+  |Browser (HTML / JavaScript)|
+  :doLogin(): POST login and password\nto api/Login.php;
+  |PHP API / MySQL|
+  :connectDatabase();\nSELECT matching Users row;
+  :Return id and name on match;\notherwise id = 0 and error;
+  |Browser (HTML / JavaScript)|
+  if (Returned id < 1?) then (yes)
+    :Display incorrect credentials message;
+  else (no)
+    :Store userId, firstName, lastName;\nsaveCookie() with 20-minute expiry;
+  endif
+  |User|
+repeat while (Login unsuccessful?) is (yes) not (no)
+
+|Browser (HTML / JavaScript)|
+:Open color.html;\nreadCookie() on page load;
+if (userId < 0 after reading cookie?) then (yes)
+  :Redirect to index.html;
+  stop
+else (no)
+  :Show color management controls;
+endif
+
+repeat
+  |User|
+  :Choose Add, Search, or Log Out;
+  switch (Chosen action)
+  case (Add)
+    :Enter color name; click Add Color;
+    |Browser (HTML / JavaScript)|
+    :addColor(): POST color and userId\nto api/AddColor.php;
+    |PHP API / MySQL|
+    :connectDatabase();\nINSERT Colors (UserId, Name);
+    :Return JSON with empty error\non the normal completion path;
+    |Browser (HTML / JavaScript)|
+    :On HTTP 200, display\n"Color has been added";
+    note right
+      Current UI does not inspect the error field.
+    end note
+  case (Search)
+    |User|
+    :Enter search text; click Search Color;
+    |Browser (HTML / JavaScript)|
+    :searchColor(): POST search and userId\nto api/SearchColors.php;
+    |PHP API / MySQL|
+    :connectDatabase();\nSELECT Name FROM Colors\nWHERE Name LIKE '%' + search + '%'\nAND UserID = userId;
+    if (Any matching rows?) then (yes)
+      :Return results array and empty error;
+      |Browser (HTML / JavaScript)|
+      :Display retrieved message\nand matching names in colorList;
+    else (no)
+      |PHP API / MySQL|
+      :Return error "No Records Found"\nwithout a results array;
+      |Browser (HTML / JavaScript)|
+      :Display retrieved message;\naccess to results.length fails;
+      note right
+        Current callback does not handle
+        the no-results response.
+      end note
+    endif
+  case (Log Out)
+    |Browser (HTML / JavaScript)|
+    :doLogout(): reset user variables;\nexpire cookie; redirect to index.html;
+  endswitch
+  |User|
+repeat while (Chosen action was not Log Out?) is (yes) not (no)
+stop
+
+legend bottom
+  Models the implemented UI flow, including the no-results behavior.
+  Main database actions assume a configured, reachable database and successful SQL.
+  connectDatabase() exits with JSON on configuration / connection failure.
+  Network failures and other malformed responses are omitted for readability.
+  Cookie checking occurs on page load; the API has no server-side session check.
+endlegend
+@enduml
