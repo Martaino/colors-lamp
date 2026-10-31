@@ -35,6 +35,7 @@ note right of Search
   Empty text matches all of their colors.
 end note
 note right of Logout
+  Precondition: color management page is open.
   Clear browser login data and cookie;
   return to index.html.
 end note
@@ -42,5 +43,6 @@ legend bottom
   Scope: existing accounts only; no registration, editing, or deletion.
   Login is a precondition for color use cases, not a repeated included use case.
   The PHP API trusts the supplied userId; login state is held in the browser.
+  Preconditions describe the normal UI workflow, not server-enforced access control.
 endlegend
 @enduml

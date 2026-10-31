@@ -28,21 +28,21 @@ package "Browser" {
 
 package "PHP API" {
   class "LoginEndpoint\napi/Login.php" as Login <<script>> {
-    getRequestInfo() : JSON object
+    getRequestInfo() : AssociativeArray
     returnWithInfo(firstName, lastName, id) : void
     returnWithError(err) : void
-    sendResultInfoAsJson(obj) : void
+    sendResultInfoAsJson(obj : String) : void
   }
   class "AddColorEndpoint\napi/AddColor.php" as Add <<script>> {
-    getRequestInfo() : JSON object
+    getRequestInfo() : AssociativeArray
     returnWithError(err) : void
-    sendResultInfoAsJson(obj) : void
+    sendResultInfoAsJson(obj : String) : void
   }
   class "SearchColorsEndpoint\napi/SearchColors.php" as Search <<script>> {
-    getRequestInfo() : JSON object
+    getRequestInfo() : AssociativeArray
     returnWithInfo(searchResults) : void
     returnWithError(err) : void
-    sendResultInfoAsJson(obj) : void
+    sendResultInfoAsJson(obj : String) : void
   }
   class "DatabaseAccess\napi/database.php" as Database <<module>> {
     connectDatabase() : mysqli
@@ -84,12 +84,15 @@ note bottom of Color
   Logical ownership: Color.UserID refers to User.ID.
   The SQL schema declares no foreign key constraint;
   the API does not enforce that the user exists.
+  Multiplicities describe the intended domain.
 end note
 legend bottom
   <<entity>> = conceptual class corresponding to a database table (Users or Colors).
   <<module>> / <<script>> = grouped functions, not literal JavaScript or PHP classes.
   Solid line = domain association with multiplicities; dashed arrow = dependency.
-  Script operations are file-scoped functions. Types summarize values, not PHP type declarations.
+  Operations group procedural functions by file. Types summarize values, not PHP type declarations.
+  AssociativeArray = decoded PHP array for a valid JSON object request.
+  sendResultInfoAsJson() writes an already serialized JSON string to the HTTP response.
   Browser state and cookie supply userId; there is no server session class.
 endlegend
 @enduml

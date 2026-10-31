@@ -10,6 +10,7 @@ skinparam ArrowColor #34495E
 start
 :Open index.html;
 repeat
+  |User|
   :Enter username and password;\nclick login;
   |Browser (HTML / JavaScript)|
   :doLogin(): POST login and password\nto api/Login.php;
@@ -22,7 +23,6 @@ repeat
   else (no)
     :Store userId, firstName, lastName;\nsaveCookie() with 20-minute expiry;
   endif
-  |User|
 repeat while (Login unsuccessful?) is (yes) not (no)
 
 |Browser (HTML / JavaScript)|
@@ -56,7 +56,11 @@ repeat
     |Browser (HTML / JavaScript)|
     :searchColor(): POST search and userId\nto api/SearchColors.php;
     |PHP API / MySQL|
-    :connectDatabase();\nSELECT Name FROM Colors\nWHERE Name LIKE '%' + search + '%'\nAND UserID = userId;
+    :connectDatabase();\nSELECT Name FROM Colors\nWHERE Name LIKE ? AND UserID = ?\n(bind pattern and userId);
+    note right
+      PHP builds pattern as "%" . search . "%".
+      Values are bound to a prepared statement.
+    end note
     if (Any matching rows?) then (yes)
       :Return results array and empty error;
       |Browser (HTML / JavaScript)|
@@ -65,25 +69,28 @@ repeat
       |PHP API / MySQL|
       :Return error "No Records Found"\nwithout a results array;
       |Browser (HTML / JavaScript)|
-      :Display retrieved message;\naccess to results.length fails;
+      :Display retrieved message;\naccess to results.length throws;\nprevious color list remains;
       note right
-        Current callback does not handle
-        the no-results response.
+        The callback ends with an uncaught error.
+        The page stays open; controls still work.
       end note
     endif
   case (Log Out)
     |Browser (HTML / JavaScript)|
     :doLogout(): reset user variables;\nexpire cookie; redirect to index.html;
   endswitch
-  |User|
+  |Browser (HTML / JavaScript)|
 repeat while (Chosen action was not Log Out?) is (yes) not (no)
 stop
 
 legend bottom
   Models the implemented UI flow, including the no-results behavior.
+  One request at a time is shown; overlapping asynchronous requests are omitted.
+  Retrying login and continuing to logout are scenario choices; the user may leave at any time.
   Main database actions assume a configured, reachable database and successful SQL.
   connectDatabase() exits with JSON on configuration / connection failure.
   Network failures and other malformed responses are omitted for readability.
   Cookie checking occurs on page load; the API has no server-side session check.
+  The final node ends this scenario, not the web server or browser.
 endlegend
 @enduml
