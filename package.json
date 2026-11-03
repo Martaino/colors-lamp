@@ -2,12 +2,15 @@
   "name": "colors-lamp",
   "version": "1.0.0",
   "private": true,
-  "description": "Development-only linting tools for the COLORS LAMP application",
+  "description": "Development-only linting and testing tools for the COLORS LAMP application",
   "scripts": {
     "lint": "npm run lint:html && npm run lint:css && npm run lint:js",
     "lint:html": "htmlhint \"public/**/*.html\"",
     "lint:css": "stylelint \"public/**/*.css\" --max-warnings 0",
-    "lint:js": "eslint \"public/**/*.js\" --max-warnings 0"
+    "lint:js": "eslint \"public/**/*.js\" \"tests/**/*.cjs\" jest.config.cjs --max-warnings 0",
+    "test": "jest --ci --runInBand",
+    "test:unit": "jest --ci --runInBand --selectProjects unit",
+    "test:integration": "jest --ci --runInBand --selectProjects integration"
   },
   "engines": {
     "node": ">=24"
@@ -17,6 +20,8 @@
     "eslint": "10.14.0",
     "globals": "17.14.0",
     "htmlhint": "1.9.2",
+    "jest": "30.5.2",
+    "jsdom": "26.1.0",
     "stylelint": "17.16.0",
     "stylelint-config-standard": "40.0.0"
   }

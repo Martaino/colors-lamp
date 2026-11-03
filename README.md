@@ -11,6 +11,7 @@ the version-control assignment.
 - PHP MySQLi with mysqlnd for prepared queries and `get_result()`
 - HTML, CSS, and browser JavaScript with XMLHttpRequest and JSON
 - Google Fonts (Ubuntu); the supplied MD5 helper is included but unused
+- Development tools only: Node.js 24+, HTMLHint, Stylelint, ESLint, and Jest
 
 ## Repository layout
 
@@ -23,6 +24,9 @@ public/
   js/                 Browser logic and supplied MD5 helper
   images/             Lab background image
 database/schema.sql   Empty Users and Colors tables
+tests/                Browser unit tests, PHP API integration tests, test DB setup
+jest.config.cjs       Separate Jest unit and integration projects
+.github/workflows/    Automated linting and tests on pushes and pull requests
 docs/uml/             UML source files, rendered diagrams, and modeling notes
 README.md             Setup and project notes
 LICENSE.md            MIT license
@@ -169,7 +173,8 @@ branch and every pull request. It installs the exact dependencies from
 
 Stylelint extends its standard rules and permits the lab's existing camelCase
 IDs. ESLint uses its recommended rules with browser globals, plus style rules
-for the application script. The supplied MD5 helper is also checked, with its
+for the application script. Test files and the Jest configuration are also
+linted. The supplied MD5 helper is checked, with its
 CommonJS global declared. Page initialization lives in `public/js/color.js`
 so it is included in JavaScript linting. HTML event handlers call the exported
 functions declared in `public/js/code.js`.
@@ -177,9 +182,67 @@ functions declared in `public/js/code.js`.
 To debug a failure, open the failing step in the repository's
 [Actions tab](https://github.com/Martaino/colors-lamp/actions), run that step's
 command locally, fix the reported file and line, then commit and push again.
-Confirm the final commit has a green Lint run in Actions before submitting
+Confirm the final commit has a green CI run in Actions before submitting
 its commit URL. Dependency folders, lint reports, and caches are ignored;
 the lockfile is committed so local and CI installs are reproducible.
+
+### Automated tests
+
+Jest runs two projects configured in `jest.config.cjs`:
+
+- `tests/unit/colors.test.cjs` loads the actual HTML and `public/js/code.js`
+  in jsdom. It checks add-color request data and feedback, search result
+  rendering, transport error feedback, and failed-login feedback. HTTP is
+  mocked only in these unit tests. jsdom is pinned to 26.1.0 for compatibility
+  with Jest's CommonJS runner.
+- `tests/integration/api.test.cjs` makes real HTTP requests to the PHP
+  endpoints using a MySQL test database. It checks valid and invalid login,
+  status codes and JSON content types, add/search persistence, user-scoped
+  searches, and the existing no-match error response. PHP and MySQL are not
+  mocked.
+
+Run frontend unit tests without PHP or MySQL:
+
+```sh
+npm ci
+npm run test:unit
+```
+
+For integration tests, install PHP with MySQLi/mysqlnd and MySQL. Create a
+**disposable database named `colors_ci_test`** with a local user allowed to
+create/drop tables and select/insert rows in that database. Set `DB_HOST`,
+`DB_USER`, and `DB_PASSWORD` as in the setup instructions, then run:
+
+```sh
+export DB_NAME=colors_ci_test
+php tests/setup-database.php
+php -S 127.0.0.1:8000 -t .
+```
+
+The setup script deletes and recreates `Users` and `Colors` in that test
+database and inserts two disposable test users. It refuses any database name
+other than `colors_ci_test`. Never use that name for application data.
+The credentials in the test fixtures and workflow are only for the disposable
+test environment.
+
+In a second terminal, with the PHP server running:
+
+```sh
+npm run test:integration
+npm test
+```
+
+`npm test` runs both projects and fails if either fails. It requires the seeded
+database and PHP server; integration tests are never silently skipped.
+`TEST_BASE_URL` may override the default `http://127.0.0.1:8000` when testing
+another loopback port. The Node.js process only runs test tools and acts as an
+HTTP client; PHP runs the application.
+
+The CI workflow first runs lint, then provisions PHP 8.3 with MySQLi/mysqlnd
+and a fresh MySQL 8.4 service, initializes the test database, starts PHP on
+loopback, waits for HTTP readiness, and runs `npm test`. GitHub removes the
+test database service after the job. Failures appear in the Actions logs;
+reports, screenshots, dependency folders, and database data are not committed.
 
 ### Application validation
 

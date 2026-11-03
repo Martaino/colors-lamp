@@ -28,4 +28,12 @@ export default [
       globals: { module: "readonly" },
     },
   },
+  {
+    files: ["tests/**/*.cjs", "jest.config.cjs"],
+    languageOptions: {
+      sourceType: "commonjs",
+      globals: { ...globals.node, ...globals.jest },
+    },
+    rules: js.configs.recommended.rules,
+  },
 ];

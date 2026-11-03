@@ -1,4 +1,4 @@
-name: Lint
+name: CI
 
 on:
   push:
@@ -28,3 +28,64 @@ jobs:
         run: npm run lint:css
       - name: Lint JavaScript
         run: npm run lint:js
+
+  tests:
+    name: Jest unit and PHP/MySQL integration tests
+    needs: lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: ci-root-only
+          MYSQL_DATABASE: colors_ci_test
+          MYSQL_USER: colors_test
+          MYSQL_PASSWORD: ci-database-only
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 --silent"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+    env:
+      DB_HOST: 127.0.0.1
+      DB_NAME: colors_ci_test
+      DB_USER: colors_test
+      DB_PASSWORD: ci-database-only
+      TEST_BASE_URL: http://127.0.0.1:8000
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js for testing tools
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Set up PHP application runtime
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mysqli, mysqlnd
+          coverage: none
+      - name: Install testing tools
+        run: npm ci
+      - name: Initialize disposable test database
+        run: php tests/setup-database.php
+      - name: Start PHP application and wait for readiness
+        run: |
+          php -S 127.0.0.1:8000 -t . > /tmp/colors-php.log 2>&1 &
+          for attempt in {1..30}; do
+            if curl --fail --silent "$TEST_BASE_URL/public/index.html" > /dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/colors-php.log
+          exit 1
+      - name: Run Jest unit and integration tests
+        run: npm test
+      - name: Show PHP diagnostics on failure
+        if: failure()
+        run: cat /tmp/colors-php.log 2>/dev/null || true
