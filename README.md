@@ -145,6 +145,44 @@ All of the application originated from the supplied COLORS lab materials.
 
 ## Validation
 
+### Automated linting and GitHub Actions
+
+Install Node.js 24 or later to use the development tools, then run:
+
+```sh
+npm ci
+npm run lint
+```
+
+Node.js is used only to run linting tools. The application still runs with
+PHP and MySQL as described above; no Node.js application server is used.
+
+The [Lint workflow](.github/workflows/lint.yml) runs on every push to any
+branch and every pull request. It installs the exact dependencies from
+`package-lock.json` with `npm ci`, then runs these checks in separate steps:
+
+| Command | Tool | Configuration | Files checked |
+| --- | --- | --- | --- |
+| `npm run lint:html` | HTMLHint | `.htmlhintrc` | `public/**/*.html` |
+| `npm run lint:css` | Stylelint | `.stylelintrc.json` | `public/**/*.css` |
+| `npm run lint:js` | ESLint | `eslint.config.mjs` | `public/**/*.js` |
+
+Stylelint extends its standard rules and permits the lab's existing camelCase
+IDs. ESLint uses its recommended rules with browser globals, plus style rules
+for the application script. The supplied MD5 helper is also checked, with its
+CommonJS global declared. Page initialization lives in `public/js/color.js`
+so it is included in JavaScript linting. HTML event handlers call the exported
+functions declared in `public/js/code.js`.
+
+To debug a failure, open the failing step in the repository's
+[Actions tab](https://github.com/Martaino/colors-lamp/actions), run that step's
+command locally, fix the reported file and line, then commit and push again.
+Confirm the final commit has a green Lint run in Actions before submitting
+its commit URL. Dependency folders, lint reports, and caches are ignored;
+the lockfile is committed so local and CI installs are reproducible.
+
+### Application validation
+
 JavaScript syntax and local asset references were checked during repository
 preparation, along with whitespace and scans for the original embedded database
 credentials. PHP and MySQL were unavailable in the preparation environment,

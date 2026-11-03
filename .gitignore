@@ -18,3 +18,10 @@ Thumbs.db
 *.log
 *.sql.gz
 /backups/
+
+# Local lint dependencies and reports
+node_modules/
+coverage/
+lint-reports/
+.eslintcache
+.stylelintcache
